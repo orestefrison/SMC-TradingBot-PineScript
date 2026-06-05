@@ -1,25 +1,24 @@
-# Create the Pine Script file with the correct naming convention for the user
-code_content = """//@version=5
-strategy("Mega Bot SMC - SPX Edition Definitive", overlay=true, margin_long=100, margin_short=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+//@version=5
+strategy("Mega Bot SMC - SPX Definitive Edition", overlay=true, margin_long=100, margin_short=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
 
-// ---- CONFIGURAZIONE CALIBRATA PER INDICI ----
-lookback = input.int(10, title="Periodo Swing (Lookback)")
-rr_ratio = input.float(2.0, title="Rapporto Rischio/Rendimento (R:R)")
-max_candele_durata = input.int(30, title="Durata Massima Trade (In Candele)")
+// ---- INDEX-CALIBRATED CONFIGURATION ----
+lookback = input.int(10, title="Swing Period (Lookback)")
+rr_ratio = input.float(2.0, title="Risk/Reward Ratio (R:R)")
+max_candele_durata = input.int(30, title="Max Trade Duration (In Candles)")
 
-// ---- IDENTIFICAZIONE STRUTTURA SMC ----
+// ---- SMC STRUCTURE IDENTIFICATION ----
 max_recente = ta.highest(high[1], lookback)
 min_recente = ta.lowest(low[1], lookback)
 
-// Caccia alla liquidità (Sweep)
+// Liquidity Hunt (Sweep)
 sweep_bull = low < min_recente and close > min_recente
 sweep_bear = high > max_recente and close < max_recente
 
-// Condizioni di ingresso semplificate per SPX
+// Simplified entry conditions for SPX
 condizione_long  = sweep_bull and close > open
 condizione_short = sweep_bear and close < open
 
-// ---- CONTATORE TEMPO INTRADAY ----
+// ---- INTRADAY TIME COUNTER ----
 var float sl_prezzo = na
 var float tp_prezzo = na
 var int barre_da_ingresso = 0
@@ -29,7 +28,7 @@ if strategy.position_size != 0
 else
     barre_da_ingresso := 0
 
-// ---- LOGICA DI INGRESSO (SINTASSI CORRETTA AL 100%) ----
+// ---- ENTRY LOGICAL ARCHITECTURE ----
 if condizione_long and strategy.position_size == 0
     sl_prezzo := ta.lowest(low, 3) 
     float risk = close - sl_prezzo
@@ -44,29 +43,25 @@ if condizione_short and strategy.position_size == 0
         tp_prezzo := close - (risk * rr_ratio)
         strategy.entry("SELL", strategy.short)
 
-// ---- USCITE MECCANICHE ----
+// ---- MECHANICAL EXITS ----
 if strategy.position_size > 0
-    strategy.exit("Uscita Long", "BUY", stop=sl_prezzo, limit=tp_prezzo)
+    strategy.exit("Long Exit", "BUY", stop=sl_prezzo, limit=tp_prezzo)
 
 if strategy.position_size < 0
-    strategy.exit("Uscita Short", "SELL", stop=sl_prezzo, limit=tp_prezzo)
+    strategy.exit("Short Exit", "SELL", stop=sl_prezzo, limit=tp_prezzo)
 
-// Protezione temporale per sbloccare i trade laterali
+// Time decay protection to unlock sideways trades
 if barre_da_ingresso >= max_candele_durata
-    strategy.close_all(comment="Chiusura Tempo")
+    strategy.close_all(comment="Time-Exit")
 
-// Reset quando piatti
+// Reset when flat
 if strategy.position_size == 0
     sl_prezzo := na
     tp_prezzo := na
 
-// ---- SEGNALI VISIVI ----
+// ---- VISUAL INDICATORS ----
 plotshape(condizione_long and strategy.position_size[1] == 0, title="BUY", style=shape.triangleup, location=location.belowbar, color=color.green, size=size.normal)
 plotshape(condizione_short and strategy.position_size[1] == 0, title="SELL", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.normal)
 
 plot(strategy.position_size != 0 ? sl_prezzo : na, title="Stop Loss", color=color.red, style=plot.style_linebr, linewidth=2)
-plot(strategy.position_size != 0 ? tp_prezzo : na, title="Take Profit", color=color.green, style=plot.style_linebr, linewidth=2)"""
-
-with open("SMC_Trading_Bot.pine", "w", encoding="utf-8") as f:
-    f.write(code_content)
-print("File 'SMC_Trading_Bot.pine' pronto per il download.")
+plot(strategy.position_size != 0 ? tp_prezzo : na, title="Take Profit", color=color.green, style=plot.style_linebr, linewidth=2)
